@@ -14,6 +14,8 @@ import requests
 from oauth2client import client
 import uuid
 import time
+import pandas as pd
+import io
 
 
 def sheets_handler(request):#request will receive the id of the file
@@ -114,9 +116,19 @@ def get_changes(request):
     data = r.json()
     l = len(data['items'])
     latest_update = int(data['items'][l-1]['id'])#fetching the latest update id for this file
+    export_link_prev = 'https://docs.google.com/spreadsheets/export?id='+file_id+'&revision='+str(latest_update-1)+'&exportFormat=csv'
+    export_link_latest = 'https://docs.google.com/spreadsheets/export?id='+file_id+'&revision='+str(latest_update)+'&exportFormat=csv'
+
+    spreadsheet_data_prev = requests.get(export_link_prev, headers=headers)
+    spreadsheet_data_latest = requests.get(export_link_latest, headers=headers)
+
+    df1 = pd.read_csv(io.BytesIO(spreadsheet_data_prev), encoding='utf8')
+    df2 = pd.read_csv(io.BytesIO(spreadsheet_data_latest), encoding='utf8')
 
 
+    # print(df1.ix[1])
 
+    #returning the response
     hook = Webhook(data="Chal gaya code")
     hook.save()
     return Response(status=200, data={'msg': "This is done"})
